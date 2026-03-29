@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vivek Mohanty — Identity &amp; Security Architect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0f1117;
+    --surface:  #161820;
+    --surface2: #1c1f2b;
+    --line:     rgba(255,255,255,0.07);
+    --line2:    rgba(255,255,255,0.12);
+    --accent:   #7b9cce;
+    --accent-dim: rgba(123,156,206,0.15);
+    --text:     #c8d0e0;
+    --text-dim: rgba(200,208,224,0.45);
+    --text-mid: rgba(200,208,224,0.68);
+    --white:    #e8edf5;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn   { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideRight { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes lineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes borderGlow {
+    0%, 100% { border-color: rgba(123,156,206,0.08); }
+    50%       { border-color: rgba(123,156,206,0.22); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 100px 0 80px;
+    border-bottom: 1px solid var(--line);
+    animation: fadeIn 0.9s ease both;
+  }
+
+  .hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .hero-eyebrow-line {
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+    transform-origin: left;
+    animation: lineGrow 0.6s ease 0.3s both;
+  }
+
+  .hero-eyebrow-text {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 400;
+    animation: fadeIn 0.6s ease 0.4s both;
+  }
+
+  .hero-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(52px, 7vw, 82px);
+    font-weight: 400;
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 24px;
+    animation: fadeIn 0.8s ease 0.2s both;
+  }
+
+  .hero-name em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+
+  .hero-summary {
+    font-size: 16px;
+    color: var(--text-mid);
+    max-width: 560px;
+    line-height: 1.75;
+    animation: fadeIn 0.8s ease 0.5s both;
+  }
+
+  .hero-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    align-items: flex-end;
+    animation: fadeIn 0.8s ease 0.65s both;
+  }
+
+  .hero-contact a,
+  .hero-contact span {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color 0.25s;
+  }
+  .hero-contact a:hover { color: var(--accent); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0;
+    animation: fadeIn 0.7s ease 0.8s both;
+  }
+
+  .stat {
+    background: var(--bg);
+    padding: 30px 32px;
+    transition: background 0.3s;
+  }
+
+  .stat:hover { background: var(--surface); }
+
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-value span {
+    background: linear-gradient(135deg, var(--white) 40%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ── SECTION ── */
+  .section {
+    padding-top: 72px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .section-num {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--line2);
+  }
+
+  /* ── SKILLS ── */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 2px;
+    background: var(--line);
+  }
+
+  .skill-cell {
+    background: var(--bg);
+    padding: 22px 20px;
+    transition: background 0.25s;
+    cursor: default;
+  }
+
+  .skill-cell:hover { background: var(--surface2); }
+
+  .skill-cell-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+
+  .skill-cell ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .skill-cell li {
+    font-size: 13px;
+    color: var(--text-mid);
+  }
+
+  /* ── EXPERIENCE ── */
+  .exp-item {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0 48px;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--line);
+    transition: border-color 0.3s;
+  }
+
+  .exp-item:hover { border-color: var(--line2); }
+
+  .exp-meta {
+    padding-top: 3px;
+  }
+
+  .exp-period {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .exp-company {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--white);
+    font-weight: 400;
+    margin-bottom: 4px;
+  }
+
+  .exp-location {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  .exp-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(123,156,206,0.3);
+    padding: 4px 10px;
+    border-radius: 2px;
+    animation: borderGlow 3s ease-in-out infinite;
+  }
+
+  .exp-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: borderGlow 1.5s ease-in-out infinite;
+  }
+
+  .exp-role {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--white);
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+
+  .exp-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .exp-points li {
+    font-size: 14px;
+    color: var(--text-mid);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.65;
+  }
+
+  .exp-points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 6px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .exp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .tag {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 3px 10px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* ── CERTS ── */
+  .cert-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--line);
+  }
+
+  .cert-block {
+    background: var(--bg);
+    padding: 32px 28px;
+    transition: background 0.3s;
+    cursor: default;
+  }
+
+  .cert-block:hover { background: var(--surface2); }
+
+  .cert-block-issuer {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .cert-block-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--white);
+    line-height: 1.35;
+  }
+
+  /* ── PROJECTS ── */
+  .project-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2px;
+    background: var(--line);
+  }
+
+  .project-block {
+    background: var(--bg);
+    padding: 32px 28px;
+    transition: background 0.3s;
+  }
+
+  .project-block:hover { background: var(--surface2); }
+
+  .project-block-tech {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .project-block-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .project-block-desc {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.65;
+  }
+
+  /* ── EDUCATION ── */
+  .edu-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 36px 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .edu-degree {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--white);
+    font-weight: 400;
+    margin-bottom: 4px;
+  }
+
+  .edu-sub {
+    font-size: 13px;
+    color: var(--text-mid);
+  }
+
+  .edu-year {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 80px;
+    padding: 32px 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-dim);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 28px;
+  }
+
+  .footer-links a {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .page { padding: 0 20px 80px; }
+    .exp-item { grid-template-columns: 1fr; gap: 4px; }
+    .cert-row, .project-row { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .hero-contact { align-items: flex-start; }
+    .hero-body { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (max-width: 520px) {
+    .stats-bar { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span class="hero-eyebrow-text">Identity &amp; Access Management</span>
+    </div>
+    <h1 class="hero-name">Vivek <em>Mohanty</em></h1>
+    <div class="hero-body">
+      <p class="hero-summary">
+        A decade of enterprise-grade IAM delivery — architecting identity governance, securing access at scale, and bridging technical depth with product and consultancy leadership across Saviynt, SailPoint, and RSA.
+      </p>
+      <div class="hero-contact">
+        <span>Bengaluru, India</span>
+        <a href="tel:+918622028912">+91 8622 028 912</a>
+        <a href="mailto:vivek.ku.mohanty@gmail.com">vivek.ku.mohanty@gmail.com</a>
+        <a href="https://linkedin.com/in/vivek9237" target="_blank">linkedin.com/in/vivek9237</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value"><span>10+</span></div>
+      <div class="stat-label">Years in IAM</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value"><span>3</span></div>
+      <div class="stat-label">Major Platforms</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value"><span>100+</span></div>
+      <div class="stat-label">App Templates Published</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value"><span>30%</span></div>
+      <div class="stat-label">Ticket Reduction</div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <section class="section reveal">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Competencies</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-cell">
+        <div class="skill-cell-label">IAM Platforms</div>
+        <ul>
+          <li>Saviynt EIC</li>
+          <li>SailPoint IdentityIQ</li>
+          <li>RSA SecurID / Aveksa</li>
+          <li>Oracle Identity Manager</li>
+        </ul>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-cell-label">Directories &amp; Cloud</div>
+        <ul>
+          <li>Active Directory</li>
+          <li>Microsoft Entra ID</li>
+          <li>LDAP</li>
+          <li>Okta</li>
+        </ul>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-cell-label">HR &amp; ITSM</div>
+        <ul>
+          <li>Workday</li>
+          <li>SAP SuccessFactors</li>
+          <li>Oracle EBS</li>
+          <li>ServiceNow</li>
+        </ul>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-cell-label">Languages</div>
+        <ul>
+          <li>Java</li>
+          <li>JavaScript</li>
+          <li>SQL</li>
+          <li>Groovy · Python · C#</li>
+        </ul>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-cell-label">Governance</div>
+        <ul>
+          <li>SoD Controls</li>
+          <li>Access Certifications</li>
+          <li>Least Privilege</li>
+          <li>Audit &amp; Compliance</li>
+        </ul>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-cell-label">Leadership</div>
+        <ul>
+          <li>Practice Building</li>
+          <li>Product Management</li>
+          <li>Team Training</li>
+          <li>Agile · Jira</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="section reveal">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Experience</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="exp-item">
+      <div class="exp-meta">
+        <div class="exp-period">03/2024 — Present</div>
+        <div class="exp-company">Optiv Security</div>
+        <div class="exp-location">Bengaluru, India</div>
+        <div class="exp-current"><span class="exp-dot"></span> Current</div>
+      </div>
+      <div>
+        <div class="exp-role">Principal Consultant</div>
+        <ul class="exp-points">
+          <li>Founded the Saviynt practice at Optiv India — led end-to-end hiring, onboarding, and technical training of the core delivery team.</li>
+          <li>Integrated Saviynt with Workday, SAP SuccessFactors, and Oracle EBS; authored integration best practices documentation adopted across the team.</li>
+          <li>Delivered full Joiner, Mover, Leaver, and Rehire lifecycle automation across clients with multiple authoritative sources using Technical and User Update Rules.</li>
+          <li>Connected target systems including Active Directory, Entra ID, Exchange, Coupa, Intune, ServiceNow, and REST-based applications.</li>
+          <li>Deployed preventive and detective SoD controls ensuring continuous compliance monitoring and proactive risk prevention.</li>
+          <li>Designed multi-level dynamic approval workflows for access requests based on application and access type.</li>
+          <li>Packaged reusable solutions (SAV Roles, Lifecycle Management, ITSM Integrations) reducing implementation effort by 15%; standardised email templates saving a further 10%.</li>
+          <li>Built and maintained an internal Saviynt community portal for sharing accelerators and delivery best practices.</li>
+        </ul>
+        <div class="exp-tags">
+          <span class="tag">Saviynt</span><span class="tag">Workday</span><span class="tag">SAP SF</span><span class="tag">SoD</span><span class="tag">ServiceNow</span><span class="tag">Lifecycle Mgmt</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp-item">
+      <div class="exp-meta">
+        <div class="exp-period">08/2021 — 03/2024</div>
+        <div class="exp-company">Saviynt</div>
+        <div class="exp-location">Bengaluru, India</div>
+      </div>
+      <div>
+        <div class="exp-role">Product Manager</div>
+        <ul class="exp-points">
+          <li>Owned the Connectors module — led a dedicated team managing all integration components of Saviynt EIC with downstream applications.</li>
+          <li>Managed onboarding for AD, LDAP, Entra ID, Unix, SFTP, Workday, Okta, and more, ensuring smooth integration and interoperability.</li>
+          <li>Led publication of 100+ application templates for the new integration framework, reducing integration time by 60%.</li>
+          <li>Spearheaded a connector stability programme that drove a 30% decrease in incoming customer support tickets.</li>
+          <li>Migrated 10+ enterprise customers from legacy SSM to current EIC — triaged regressions and validated custom connector implementations.</li>
+          <li>Retrofitted the AD connector to handle gMSA and MSA, ensuring secure service account management.</li>
+          <li>Transformed product documentation from functionality-based to practical use-case-based approach, significantly improving developer experience.</li>
+          <li>Implemented Organisation lifecycle for the EIC TPAG module, improving third-party vendor management for clients.</li>
+        </ul>
+        <div class="exp-tags">
+          <span class="tag">Saviynt EIC</span><span class="tag">Product Management</span><span class="tag">Connectors</span><span class="tag">TPAG</span><span class="tag">AD / LDAP</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp-item">
+      <div class="exp-meta">
+        <div class="exp-period">11/2019 — 07/2021</div>
+        <div class="exp-company">RSA Security</div>
+        <div class="exp-location">Bengaluru, India</div>
+      </div>
+      <div>
+        <div class="exp-role">Security Consultant</div>
+        <ul class="exp-points">
+          <li>Designed and implemented Joiner, Mover, and Leaver workflows using RSA Aveksa; delivered Access Reviews, Policy Management, and diverse application onboarding (AD, Flat File, Database, ServiceNow, O365, Web Services).</li>
+          <li>Built a custom Java bulk-operations framework for RSA IG&amp;L — enabling attribute updates, account management, and application onboarding with full audit tracking.</li>
+          <li>Led a greenfield Java product to evaluate cyber exposure across multi-RSA-product environments, generating weekly insurance-grade risk reports.</li>
+          <li>Contributed to RSA NetWitness integration (Python 2.7) for effective log collection and threat detection.</li>
+          <li>Built RSA Archer + NVD integration in C#/.NET for daily CVE/CPE import and automated vulnerable device detection.</li>
+        </ul>
+        <div class="exp-tags">
+          <span class="tag">RSA Aveksa</span><span class="tag">RSA NetWitness</span><span class="tag">RSA Archer</span><span class="tag">Java</span><span class="tag">Python</span><span class="tag">C#</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp-item">
+      <div class="exp-meta">
+        <div class="exp-period">06/2015 — 10/2019</div>
+        <div class="exp-company">Cognizant</div>
+        <div class="exp-location">Kolkata, India</div>
+      </div>
+      <div>
+        <div class="exp-role">Security Engineer</div>
+        <ul class="exp-points">
+          <li>Delivered end-to-end SailPoint IdentityIQ implementations across multiple enterprise engagements — requirements, design, deployment, and testing.</li>
+          <li>Onboarded target applications using OOTB connectors: Active Directory, JDBC, DelimitedFile, and others.</li>
+          <li>Implemented Lifecycle Events (Joiner, Leaver, Attribute Change) for employees and contractors; configured User Manager and Entitlement Owner certifications.</li>
+          <li>Built custom workflows, forms, tasks, and reports tailored to client requirements; introduced Git-based code and configuration management for multi-developer teams.</li>
+          <li>Developed captcha-based self-registration for contractors and custom SailPoint UI branding for client environments.</li>
+        </ul>
+        <div class="exp-tags">
+          <span class="tag">SailPoint IIQ</span><span class="tag">Active Directory</span><span class="tag">Lifecycle Events</span><span class="tag">Git</span><span class="tag">OIM</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATIONS -->
+  <section class="section reveal">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Certifications</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="cert-row">
+      <div class="cert-block">
+        <div class="cert-block-issuer">Saviynt</div>
+        <div class="cert-block-name">Saviynt Certified IGA Professional</div>
+      </div>
+      <div class="cert-block">
+        <div class="cert-block-issuer">Saviynt</div>
+        <div class="cert-block-name">Saviynt Certified Advanced IGA Professional</div>
+      </div>
+      <div class="cert-block">
+        <div class="cert-block-issuer">SailPoint</div>
+        <div class="cert-block-name">SailPoint Identity Security Leader</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section reveal">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Projects</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="project-row">
+      <div class="project-block">
+        <div class="project-block-tech">JavaScript · Chrome Extension API</div>
+        <div class="project-block-name">Saviynt Dev Assist</div>
+        <p class="project-block-desc">A Chrome extension integrating directly with a Saviynt tenant to enhance developer productivity. Quick-access tooling for common operations without navigating the full UI. Published on the Chrome Web Store.</p>
+      </div>
+      <div class="project-block">
+        <div class="project-block-tech">Groovy · Java</div>
+        <div class="project-block-name">Groovy Template Resolver</div>
+        <p class="project-block-desc">A utility tool for Groovy script development and debugging within the Saviynt/SailPoint ecosystem — real-time resolution of templates and expressions for developers and field engineers.</p>
+      </div>
+      <div class="project-block">
+        <div class="project-block-tech">JavaScript · Automation</div>
+        <div class="project-block-name">JSON Schema Generator</div>
+        <p class="project-block-desc">An automation tool for generating complex JSON schemas for Saviynt application onboarding templates. Reduced template creation time by 50% through automated schema construction.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section class="section reveal">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Education</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="edu-block">
+      <div>
+        <div class="edu-degree">Bachelor of Technology</div>
+        <div class="edu-sub">Electrical Engineering &nbsp;·&nbsp; Biju Patnaik University of Technology, Bhubaneswar</div>
+      </div>
+      <div class="edu-year">2011 – 2015</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-name">Vivek Mohanty</span>
+    <div class="footer-links">
+      <a href="mailto:vivek.ku.mohanty@gmail.com">Email</a>
+      <a href="https://linkedin.com/in/vivek9237" target="_blank">LinkedIn</a>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // Scroll-triggered reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Animated stat counters
+  function animateValue(el, target, suffix, duration) {
+    const isPercent = suffix === '%';
+    const isPlus = suffix === '+';
+    const start = performance.now();
+    const update = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(ease * target);
+      el.textContent = val + (isPercent ? '%' : isPlus ? '+' : '');
+      if (t < 1) requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+  }
+
+  const statData = [
+    { val: 10, suffix: '+' },
+    { val: 3, suffix: '' },
+    { val: 100, suffix: '+' },
+    { val: 30, suffix: '%' },
+  ];
+
+  const statEls = document.querySelectorAll('.stat-value span');
+  const statsBar = document.querySelector('.stats-bar');
+  let statsAnimated = false;
+
+  const statsObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !statsAnimated) {
+      statsAnimated = true;
+      statEls.forEach((el, i) => {
+        const { val, suffix } = statData[i];
+        animateValue(el, val, suffix, 1200 + i * 150);
+      });
+    }
+  }, { threshold: 0.4 });
+
+  statsObserver.observe(statsBar);
+</script>
+</body>
+</html>
