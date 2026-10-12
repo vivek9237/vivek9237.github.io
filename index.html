@@ -1,54 +1,269 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="A clean, responsive Markdown resume viewer with PDF export.">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Minimal Markdown resume viewer and PDF exporter" />
   <title>Resume</title>
-  <script>
-    (() => { const saved=localStorage.getItem('resume-theme'); const theme=saved || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); document.documentElement.dataset.theme=theme; })();
-  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
+
   <style>
-    :root{color-scheme:light;--bg:#f4f5f7;--surface:#fff;--text:#17191c;--muted:#68707c;--line:#e1e5ea;--accent:#2557d6;--hover:#eef2ff;--shadow:0 12px 34px rgba(16,24,40,.09)}
-    [data-theme="dark"]{color-scheme:dark;--bg:#0d1015;--surface:#15191f;--text:#edf0f4;--muted:#a5adba;--line:#2b313b;--accent:#8aa9ff;--hover:#202a42;--shadow:0 16px 42px rgba(0,0,0,.32)}
-    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:background .2s,color .2s}
-    button{font:inherit}.toolbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-    .toolbar-inner{max-width:1020px;margin:auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:700;letter-spacing:-.02em}.actions{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:8px 12px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:.18s}.btn:hover{background:var(--hover);border-color:var(--accent)}.btn:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 35%,transparent);outline-offset:2px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn:disabled{opacity:.55;cursor:wait}
-    .page{max-width:900px;margin:38px auto;padding:0 20px}.resume{min-height:700px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:58px 64px;overflow-wrap:anywhere}
-    .resume h1{font-size:2.35rem;line-height:1.15;margin:0 0 8px;letter-spacing:-.045em}.resume h2{font-size:1.12rem;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:7px;margin:30px 0 12px}.resume h3{font-size:1rem;margin:18px 0 3px}.resume p{margin:7px 0}.resume ul,.resume ol{margin:7px 0;padding-left:22px}.resume li{margin:3px 0}.resume a{color:var(--accent);text-decoration:none}.resume a:hover{text-decoration:underline}.resume strong{font-weight:650}.resume blockquote{margin:15px 0;padding:2px 16px;border-left:3px solid var(--accent);color:var(--muted)}.resume code{background:var(--bg);border-radius:5px;padding:2px 5px}.resume hr{border:0;border-top:1px solid var(--line);margin:24px 0}.resume img{max-width:100%;height:auto}.resume table{width:100%;border-collapse:collapse;margin:14px 0}.resume th,.resume td{border:1px solid var(--line);padding:7px 9px;text-align:left}
-    .state{text-align:center;color:var(--muted);padding:160px 20px}.state strong{display:block;color:var(--text);font-size:1.1rem;margin-bottom:6px}.state .btn{margin-top:14px}.hidden{display:none!important}.status{max-width:900px;margin:0 auto 20px;padding:0 20px;color:var(--muted);font-size:.85rem}
-    @media(max-width:680px){.brand{display:none}.toolbar-inner{justify-content:flex-end}.page{margin:18px auto;padding:0 10px}.resume{border-radius:10px;padding:34px 24px}.resume h1{font-size:1.95rem}.btn-label{display:none}}
-    @media print{.toolbar,.status{display:none!important}.page{margin:0;max-width:none;padding:0}.resume{border:0;box-shadow:none;border-radius:0;padding:0;background:#fff;color:#111}}
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fa;
+      --paper: #ffffff;
+      --text: #172033;
+      --muted: #637083;
+      --line: #dce2ea;
+      --accent: #155eef;
+      --accent-hover: #004eeb;
+      --danger-bg: #fff4f4;
+      --danger-text: #b42318;
+      --shadow: 0 12px 32px rgba(16, 24, 40, 0.09);
+      --radius: 14px;
+      --page-width: 210mm;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.58;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+      padding: 10px clamp(16px, 4vw, 42px);
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand { min-width: 0; }
+    .brand strong { display: block; font-size: 15px; letter-spacing: -0.01em; }
+    .brand span { display: block; color: var(--muted); font-size: 12px; }
+
+    .actions { display: flex; align-items: center; gap: 8px; }
+
+    button, .file-label {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+    }
+
+    button:hover, .file-label:hover { background: #f8fafc; border-color: #bcc6d4; }
+    button:active, .file-label:active { transform: translateY(1px); }
+    button:focus-visible, .file-label:focus-visible { outline: 3px solid rgba(21, 94, 239, .22); outline-offset: 2px; }
+    button:disabled { cursor: wait; opacity: .65; }
+
+    .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+    .primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+    input[type="file"] { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+
+    main { padding: 34px 16px 64px; }
+
+    .status {
+      width: min(var(--page-width), 100%);
+      margin: 0 auto 14px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .status.error { border-color: #f4c7c3; background: var(--danger-bg); color: var(--danger-text); }
+    .status[hidden] { display: none; }
+
+    #resume {
+      width: min(var(--page-width), 100%);
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 18mm 17mm;
+      overflow-wrap: anywhere;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    #resume > :first-child { margin-top: 0; }
+    #resume > :last-child { margin-bottom: 0; }
+    #resume h1, #resume h2, #resume h3, #resume h4 {
+      color: #101828;
+      line-height: 1.25;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    #resume h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.035em; }
+    #resume h2 { margin: 26px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #bfc7d2; font-size: 18px; letter-spacing: -0.015em; }
+    #resume h3 { margin: 18px 0 6px; font-size: 15px; }
+    #resume h4 { margin: 14px 0 5px; font-size: 14px; }
+    #resume p { margin: 7px 0; }
+    #resume ul, #resume ol { margin: 7px 0 10px; padding-left: 22px; }
+    #resume li { margin: 3px 0; }
+    #resume a { color: #174ea6; text-decoration: none; border-bottom: 1px solid #a9bee3; }
+    #resume strong { color: #111827; }
+    #resume hr { margin: 20px 0; border: 0; border-top: 1px solid var(--line); }
+    #resume blockquote { margin: 12px 0; padding: 2px 0 2px 14px; border-left: 3px solid #aab4c3; color: #475467; }
+    #resume code { padding: 1px 4px; border-radius: 4px; background: #f2f4f7; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em; }
+    #resume pre { overflow: auto; padding: 12px; border-radius: 8px; background: #f2f4f7; white-space: pre-wrap; }
+    #resume pre code { padding: 0; background: transparent; }
+    #resume img { display: block; max-width: 100%; height: auto; margin: 12px auto; }
+    #resume table { width: 100%; margin: 12px 0; border-collapse: collapse; font-size: 13px; }
+    #resume th, #resume td { padding: 7px 8px; border: 1px solid #d0d5dd; text-align: left; vertical-align: top; }
+    #resume th { background: #f8fafc; font-weight: 700; }
+    #resume p, #resume li, #resume table, #resume blockquote, #resume pre { break-inside: avoid; page-break-inside: avoid; }
+
+    .loading { color: var(--muted); text-align: center; padding-top: 80px; }
+
+    @media (max-width: 680px) {
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .actions { width: 100%; }
+      button, .file-label { flex: 1; }
+      main { padding: 16px 0 40px; }
+      .status { width: calc(100% - 24px); }
+      #resume { min-height: 0; padding: 24px 20px; border-left: 0; border-right: 0; border-radius: 0; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: #fff; }
+      .toolbar, .status { display: none !important; }
+      main { padding: 0; }
+      #resume { width: 210mm; min-height: 297mm; margin: 0; padding: 18mm 17mm; border: 0; border-radius: 0; box-shadow: none; }
+    }
   </style>
 </head>
 <body>
-  <header class="toolbar"><div class="toolbar-inner"><div class="brand">Resume</div><div class="actions">
-    <button class="btn" id="openBtn" type="button" title="Open a Markdown file">↥ <span class="btn-label">Open Markdown</span></button>
-    <button class="btn" id="themeBtn" type="button" aria-label="Toggle color theme" title="Toggle light/dark mode"><span id="themeIcon">☾</span> <span class="btn-label" id="themeLabel">Dark</span></button>
-    <button class="btn primary" id="pdfBtn" type="button" disabled>↓ <span>Download PDF</span></button>
-  </div></div></header>
-  <main class="page"><article id="resume" class="resume" aria-live="polite"><div class="state"><strong>Loading resume.md…</strong><span>Your resume will appear here.</span></div></article></main>
-  <div id="status" class="status" role="status"></div>
-  <input id="fileInput" class="hidden" type="file" accept=".md,text/markdown,text/plain">
+  <header class="toolbar" aria-label="Resume controls">
+    <div class="brand">
+      <strong>Resume</strong>
+      <span id="fileName">resume.md</span>
+    </div>
+    <div class="actions">
+      <label class="file-label" for="filePicker" title="Open another Markdown file">Open .md</label>
+      <input id="filePicker" type="file" accept=".md,text/markdown,text/plain" />
+      <button id="downloadButton" class="primary" type="button">Download PDF</button>
+    </div>
+  </header>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/18.1.0/lib/marked.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.16/purify.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <main>
+    <div id="status" class="status" role="status">Loading resume.md...</div>
+    <article id="resume" aria-live="polite"><p class="loading">Loading resume...</p></article>
+  </main>
+
   <script>
     (() => {
       'use strict';
-      const resume=document.getElementById('resume'), status=document.getElementById('status'), pdfBtn=document.getElementById('pdfBtn'), themeBtn=document.getElementById('themeBtn'), themeIcon=document.getElementById('themeIcon'), themeLabel=document.getElementById('themeLabel'), openBtn=document.getElementById('openBtn'), fileInput=document.getElementById('fileInput');
-      let fileName='resume';
-      const escapeHtml=s=>s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-      const setTheme=theme=>{document.documentElement.dataset.theme=theme; localStorage.setItem('resume-theme',theme); const dark=theme==='dark'; themeIcon.textContent=dark?'☀':'☾'; themeLabel.textContent=dark?'Light':'Dark'; themeBtn.setAttribute('aria-label',`Switch to ${dark?'light':'dark'} mode`)};
-      const render=markdown=>{if(!window.marked||!window.DOMPurify) throw new Error('Required rendering libraries could not be loaded. Check your internet connection.'); const clean=markdown.replace(/^[\u200B-\u200F\uFEFF]/,''); resume.innerHTML=DOMPurify.sanitize(marked.parse(clean,{gfm:true,breaks:false})); resume.querySelectorAll('a').forEach(a=>{if(/^https?:/i.test(a.href)){a.target='_blank';a.rel='noopener noreferrer'}}); pdfBtn.disabled=false; status.textContent=''; document.title=(resume.querySelector('h1')?.textContent||'Resume').trim()};
-      const showError=message=>{resume.innerHTML=`<div class="state"><strong>Could not load resume.md</strong><span>${escapeHtml(message)}</span><br><button class="btn" id="fallbackOpen" type="button">Open resume.md</button></div>`; document.getElementById('fallbackOpen').onclick=()=>fileInput.click(); status.textContent='Tip: serve this folder with a local web server, or use Open Markdown.'};
-      async function loadDefault(){try{const response=await fetch('./resume.md',{cache:'no-store'}); if(!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`); render(await response.text())}catch(e){showError(location.protocol==='file:'?'Browsers block automatic local-file access. Click “Open resume.md”, or run this folder through a local web server.':e.message)}}
-      themeBtn.onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'); openBtn.onclick=()=>fileInput.click();
-      fileInput.onchange=async e=>{const file=e.target.files[0]; if(!file)return; fileName=file.name.replace(/\.md$/i,'')||'resume'; try{render(await file.text())}catch(err){showError(err.message)} finally{e.target.value=''}};
-      pdfBtn.onclick=async()=>{if(!window.html2pdf){showError('PDF library could not be loaded. Check your internet connection.');return} const old=pdfBtn.innerHTML; pdfBtn.disabled=true; pdfBtn.innerHTML='Preparing…'; try{await html2pdf().set({margin:[10,11,10,11],filename:`${fileName}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollY:0},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['h1','h2','h3','li','table']}}).from(resume).save()}catch(err){status.textContent=`PDF export failed: ${err.message}`}finally{pdfBtn.disabled=false;pdfBtn.innerHTML=old}};
-      setTheme(document.documentElement.dataset.theme); loadDefault();
+
+      const DEFAULT_FILE = 'resume.md';
+      const resume = document.getElementById('resume');
+      const status = document.getElementById('status');
+      const fileName = document.getElementById('fileName');
+      const filePicker = document.getElementById('filePicker');
+      const downloadButton = document.getElementById('downloadButton');
+
+      marked.setOptions({ gfm: true, breaks: true });
+
+      function setStatus(message = '', isError = false) {
+        status.textContent = message;
+        status.classList.toggle('error', isError);
+        status.hidden = !message;
+      }
+
+      function renderMarkdown(source, name = DEFAULT_FILE) {
+        const rendered = marked.parse(source);
+        resume.innerHTML = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } });
+        fileName.textContent = name;
+        document.title = name.replace(/\.md$/i, '') || 'Resume';
+        setStatus('');
+      }
+
+      async function loadDefaultResume() {
+        try {
+          const response = await fetch(DEFAULT_FILE, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          renderMarkdown(await response.text(), DEFAULT_FILE);
+        } catch (error) {
+          resume.innerHTML = `
+            <h1>Resume file not loaded</h1>
+            <p>Place <strong>resume.md</strong> beside <strong>index.html</strong>, then open the folder through a local or web server.</p>
+            <p>You can also use <strong>Open .md</strong> above to select the file directly.</p>`;
+          setStatus('Could not automatically load resume.md. Use “Open .md” or run this page through a web server.', true);
+        }
+      }
+
+      filePicker.addEventListener('change', async (event) => {
+        const [file] = event.target.files;
+        if (!file) return;
+        try {
+          renderMarkdown(await file.text(), file.name);
+        } catch (error) {
+          setStatus('The selected Markdown file could not be read.', true);
+        } finally {
+          filePicker.value = '';
+        }
+      });
+
+      downloadButton.addEventListener('click', async () => {
+        const previousText = downloadButton.textContent;
+        downloadButton.disabled = true;
+        downloadButton.textContent = 'Creating PDF...';
+
+        const outputName = `${fileName.textContent.replace(/\.md$/i, '') || 'resume'}.pdf`;
+        const options = {
+          margin: 0,
+          filename: outputName,
+          image: { type: 'jpeg', quality: 1 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['h1', 'h2', 'h3', 'p', 'li', 'table', 'blockquote', 'pre'] }
+        };
+
+        try {
+          await document.fonts.ready;
+          await html2pdf().set(options).from(resume).save();
+        } catch (error) {
+          setStatus('PDF generation failed. Check the browser console or use Print > Save as PDF.', true);
+        } finally {
+          downloadButton.disabled = false;
+          downloadButton.textContent = previousText;
+        }
+      });
+
+      loadDefaultResume();
     })();
   </script>
 </body>
