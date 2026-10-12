@@ -53,8 +53,6 @@
     #resume > :first-child { margin-top: 0; }
     #resume > :last-child { margin-bottom: 0; }
 
-    #resume .intro { text-align: center; }
-
     #resume h1,
     #resume h2,
     #resume h3 {
@@ -86,7 +84,34 @@
     }
 
     #resume p { margin: 6px 0; }
-    #resume .intro p { margin: 4px 0; color: #2a2a2a; }
+
+    #resume table.header {
+      width: 100%;
+      margin: 0 0 12px;
+      border-collapse: collapse;
+    }
+
+    #resume table.header td {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      vertical-align: middle;
+    }
+
+    #resume table.header td.name {
+      width: 1%;
+      padding-right: 24px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    #resume table.header h1 { margin: 0; text-align: left; }
+
+    #resume table.header td.contact {
+      text-align: right;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #2a2a2a;
+    }
 
     #resume h3 + p em {
       color: var(--muted);
@@ -109,8 +134,7 @@
     }
 
     #resume hr {
-      margin: 18px auto 0;
-      width: 72px;
+      margin: 16px 0 0;
       border: 0;
       border-top: 1px solid #111;
     }
@@ -170,6 +194,11 @@
       }
       #resume h1 { font-size: 28px; }
       #resume h2 { letter-spacing: 0.08em; }
+      #resume table.header,
+      #resume table.header tbody,
+      #resume table.header tr,
+      #resume table.header td { display: block; width: 100%; }
+      #resume table.header td.contact { margin-top: 4px; text-align: right; }
       .download {
         right: calc(16px + env(safe-area-inset-right));
         bottom: calc(16px + env(safe-area-inset-bottom));
@@ -240,11 +269,6 @@
           USE_PROFILES: { html: true }
         });
 
-        for (const child of resume.children) {
-          if (child.tagName === 'H2') break;
-          child.classList.add('intro');
-        }
-
         const heading = resume.querySelector('h1');
         const name = heading ? heading.textContent.trim() : 'Resume';
         document.title = name;
@@ -271,15 +295,16 @@
             // element. Forcing both to 0 keeps the resume at the top of page 1.
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 800,
-            onclone(_doc, element) {
-              const node = element.querySelector('#resume') || element;
-              node.style.boxShadow = 'none';
-              node.style.margin = '0';
-              node.style.width = '100%';
-              node.style.maxWidth = 'none';
-              node.style.padding = '0';
-              node.style.borderRadius = '0';
+            onclone(doc) {
+              const nodes = doc.querySelectorAll('#resume');
+              nodes.forEach((node) => {
+                node.style.boxShadow = 'none';
+                node.style.margin = '0';
+                node.style.width = '100%';
+                node.style.maxWidth = 'none';
+                node.style.padding = '0';
+                node.style.borderRadius = '0';
+              });
             }
           },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -288,7 +313,15 @@
 
         try {
           if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          await html2pdf().set(options).from(resume).save();
+          const blob = await html2pdf().set(options).from(resume).outputPdf('blob');
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${name} Resume.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
         } catch (error) {
           label.textContent = 'Try again';
           downloadButton.disabled = false;
