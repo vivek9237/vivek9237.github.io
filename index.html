@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Minimal Markdown resume viewer and PDF exporter" />
-  <title>Resume</title>
+  <title>Vivek Mohanty - Resume</title>
 
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
@@ -169,19 +169,17 @@
 <body>
   <header class="toolbar" aria-label="Resume controls">
     <div class="brand">
-      <strong>Resume</strong>
-      <span id="fileName">resume.md</span>
+      <strong>Vivek Mohanty</strong>
+      <span id="fileName">Identity Architect</span>
     </div>
     <div class="actions">
-      <label class="file-label" for="filePicker" title="Open another Markdown file">Open .md</label>
-      <input id="filePicker" type="file" accept=".md,text/markdown,text/plain" />
-      <button id="downloadButton" class="primary" type="button">Download PDF</button>
+      <button id="downloadButton" class="primary" type="button">Download Resume as PDF</button>
     </div>
   </header>
 
   <main>
     <div id="status" class="status" role="status">Loading resume.md...</div>
-    <article id="resume" aria-live="polite"><p class="loading">Loading resume...</p></article>
+    <article id="resume" aria-live="polite"><p class="loading">Loading Resume...</p></article>
   </main>
 
   <script>
