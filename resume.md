@@ -1,14 +1,14 @@
-<div align="center">
-
-# **Vivek Mohanty**
-
-**Address:** Bengaluru, India  
-**Phone:** +91 8622 028 912  
-**Email:** [vivek.ku.mohanty@gmail.com](mailto:vivek.ku.mohanty@gmail.com) · **LinkedIn:** [vivek9237](https://linkedin.com/in/vivek9237) · **GitHub:** [vivek9237](https://github.com/vivek9237)
+<table class="header">
+<tr>
+<td class="name" rowspan="2"><h1>Vivek Mohanty</h1></td>
+<td class="contact"><strong>Address:</strong> Bengaluru, India · <strong>Phone:</strong> +91 8622 028 912</td>
+</tr>
+<tr>
+<td class="contact"><strong>Email:</strong> <a href="mailto:vivek.ku.mohanty@gmail.com">vivek.ku.mohanty@gmail.com</a> · <a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a></td>
+</tr>
+</table>
 
 **11 years of expertise in IAM domain** ✱ **Saviynt, SailPoint, RSA SecurID** ✱ **Java, SQL, Groovy**
-
-</div>
 
 ---
 
