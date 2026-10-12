@@ -8,7 +8,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -276,48 +276,267 @@
         return name;
       }
 
-      downloadButton.addEventListener('click', async () => {
+      function pdfText(value) {
+        return value
+          .replace(/\u2731/g, '*')
+          .replace(/[\u2013\u2014]/g, '-')
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201c\u201d]/g, '"')
+          .replace(/\u00a0/g, ' ');
+      }
+
+      function fontStyle(run) {
+        if (run.bold && run.italics) return 'bolditalic';
+        if (run.bold) return 'bold';
+        if (run.italics) return 'italic';
+        return 'normal';
+      }
+
+      function runsFrom(element) {
+        const runs = [];
+        const walk = (node, style) => {
+          node.childNodes.forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              const text = pdfText(child.textContent);
+              if (text) runs.push({ text, ...style });
+              return;
+            }
+            if (child.nodeType !== Node.ELEMENT_NODE) return;
+            const tag = child.tagName;
+            if (tag === 'UL' || tag === 'OL') return;
+            if (tag === 'BR') {
+              runs.push({ text: '\n', ...style });
+              return;
+            }
+            const next = { ...style };
+            if (tag === 'STRONG' || tag === 'B') next.bold = true;
+            if (tag === 'EM' || tag === 'I') next.italics = true;
+            if (tag === 'A') next.link = child.getAttribute('href') || '';
+            walk(child, next);
+          });
+        };
+        walk(element, {});
+        return runs;
+      }
+
+      function buildResumePdf(root) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
+        const margin = 48;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const maxWidth = pageWidth - margin * 2;
+        let y = margin;
+
+        const name = pdfText((root.querySelector('h1')?.textContent || 'Resume').trim());
+        doc.setProperties({
+          title: `${name} Resume`,
+          author: name,
+          subject: 'Resume'
+        });
+        if (typeof doc.setLanguage === 'function') doc.setLanguage('en-US');
+
+        function ensure(height) {
+          if (y + height > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+          }
+        }
+
+        function measure(run, size) {
+          doc.setFont('helvetica', fontStyle(run));
+          doc.setFontSize(size);
+          return doc.getTextWidth(run.text);
+        }
+
+        function tokensOf(runs, size) {
+          const tokens = [];
+          runs.forEach((run) => {
+            if (run.text === '\n') {
+              tokens.push({ break: true });
+              return;
+            }
+            run.text.split(/(\s+)/).forEach((part) => {
+              if (!part) return;
+              tokens.push({ ...run, text: part, width: measure({ ...run, text: part }, size) });
+            });
+          });
+          return tokens;
+        }
+
+        function layout(runs, size, width) {
+          const lines = [];
+          let line = [];
+          let used = 0;
+          tokensOf(runs, size).forEach((token) => {
+            if (token.break) {
+              lines.push(line);
+              line = [];
+              used = 0;
+              return;
+            }
+            if (/^\s+$/.test(token.text)) {
+              if (!line.length) return;
+              line.push(token);
+              used += token.width;
+              return;
+            }
+            if (used + token.width > width && line.length) {
+              while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+              lines.push(line);
+              line = [token];
+              used = token.width;
+            } else {
+              line.push(token);
+              used += token.width;
+            }
+          });
+          while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+          if (line.length) lines.push(line);
+          return lines;
+        }
+
+        function drawLine(line, x, baseline, size) {
+          line.forEach((token) => {
+            doc.setFont('helvetica', fontStyle(token));
+            doc.setFontSize(size);
+            doc.setTextColor(token.color || 22);
+            doc.text(token.text, x, baseline);
+            if (token.link && !/^\s+$/.test(token.text)) {
+              doc.setDrawColor(22);
+              doc.setLineWidth(0.4);
+              doc.line(x, baseline + 1.6, x + token.width, baseline + 1.6);
+              doc.link(x, baseline - size + 1, token.width, size, { url: token.link });
+            }
+            x += token.width;
+          });
+        }
+
+        function drawBlock(runs, options) {
+          const size = options.size || 10;
+          const indent = options.indent || 0;
+          const lineHeight = size * (options.leading || 1.38);
+          const lines = layout(runs, size, maxWidth - indent);
+          lines.forEach((line) => {
+            ensure(lineHeight);
+            const width = line.reduce((sum, token) => sum + token.width, 0);
+            const x = options.align === 'right'
+              ? pageWidth - margin - width
+              : margin + indent;
+            drawLine(line, x, y, size);
+            y += lineHeight;
+          });
+          y += options.after ?? 2;
+        }
+
+        function drawRule() {
+          ensure(10);
+          doc.setDrawColor(17);
+          doc.setLineWidth(0.7);
+          doc.line(margin, y, pageWidth - margin, y);
+          y += 8;
+        }
+
+        function drawHeader(table) {
+          const contacts = [...table.querySelectorAll('td.contact')];
+          const size = 9.5;
+          const lineHeight = 13;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          const nameWidth = doc.getTextWidth(name);
+          const contactWidth = maxWidth - nameWidth - 20;
+          const contactLines = contacts.flatMap((cell) => layout(runsFrom(cell), size, contactWidth));
+          const blockHeight = Math.max(22, contactLines.length * lineHeight);
+          ensure(blockHeight + 4);
+          const top = y;
+          doc.setTextColor(22);
+          doc.text(name, margin, top + Math.max(16, (blockHeight + 8) / 2));
+          contactLines.forEach((line, index) => {
+            const width = line.reduce((sum, token) => sum + token.width, 0);
+            drawLine(line, pageWidth - margin - width, top + 11 + index * lineHeight, size);
+          });
+          y = top + blockHeight + 8;
+        }
+
+        function drawList(list, depth) {
+          [...list.children].forEach((item) => {
+            if (item.tagName !== 'LI') return;
+            const clone = item.cloneNode(true);
+            clone.querySelectorAll('ul, ol').forEach((nested) => nested.remove());
+            const indent = 16 + depth * 14;
+            const size = 10;
+            const lineHeight = size * 1.38;
+            const lines = layout(runsFrom(clone), size, maxWidth - indent);
+            lines.forEach((line, index) => {
+              ensure(lineHeight);
+              if (index === 0) {
+                doc.setFillColor(22);
+                doc.circle(margin + indent - 8, y - 3, 1.15, 'F');
+              }
+              drawLine(line, margin + indent, y, size);
+              y += lineHeight;
+            });
+            y += 1.5;
+            [...item.children].forEach((child) => {
+              if (child.tagName === 'UL' || child.tagName === 'OL') drawList(child, depth + 1);
+            });
+          });
+          y += 3;
+        }
+
+        [...root.children].forEach((element) => {
+          const tag = element.tagName;
+          if (tag === 'TABLE') {
+            drawHeader(element);
+          } else if (tag === 'H2') {
+            ensure(36);
+            y += 8;
+            drawBlock([{ text: pdfText(element.textContent).trim().toUpperCase(), bold: true }], {
+              size: 11,
+              leading: 1.2,
+              after: 3
+            });
+            drawRule();
+          } else if (tag === 'H3') {
+            ensure(28);
+            y += 6;
+            drawBlock(runsFrom(element).map((run) => ({ ...run, bold: true })), {
+              size: 11,
+              leading: 1.25,
+              after: 1
+            });
+          } else if (tag === 'P') {
+            if (!element.textContent.trim()) return;
+            const date = element.querySelector('em') && element.textContent.trim() === element.querySelector('em').textContent.trim();
+            drawBlock(runsFrom(element), {
+              size: date ? 10 : 10.5,
+              leading: 1.38,
+              after: date ? 2 : 3
+            });
+          } else if (tag === 'UL' || tag === 'OL') {
+            drawList(element, 0);
+          } else if (tag === 'HR') {
+            y += 2;
+            drawRule();
+          }
+        });
+
+        return doc;
+      }
+
+      downloadButton.addEventListener('click', () => {
         const previous = label.textContent;
         downloadButton.disabled = true;
         label.textContent = 'Preparing…';
 
         const name = (resume.querySelector('h1')?.textContent || 'Resume').trim();
-        const options = {
-          margin: [12, 12, 12, 12],
-          filename: `${name} Resume.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            // html2canvas adds the page scroll offset above the captured
-            // element. Forcing both to 0 keeps the resume at the top of page 1.
-            scrollX: 0,
-            scrollY: 0,
-            onclone(doc) {
-              const nodes = doc.querySelectorAll('#resume');
-              nodes.forEach((node) => {
-                node.style.boxShadow = 'none';
-                node.style.margin = '0';
-                node.style.width = '100%';
-                node.style.maxWidth = 'none';
-                node.style.padding = '0';
-                node.style.borderRadius = '0';
-              });
-            }
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], before: [], after: [], avoid: [] }
-        };
 
         try {
-          if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          const blob = await html2pdf().set(options).from(resume).outputPdf('blob');
+          const blob = buildResumePdf(resume).output('blob');
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `${name} Resume.pdf`;
+          link.download = `${pdfText(name)} Resume.pdf`;
           document.body.appendChild(link);
           link.click();
           link.remove();
