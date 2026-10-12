@@ -207,7 +207,7 @@
         const rendered = marked.parse(source);
         resume.innerHTML = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } });
         fileName.textContent = name;
-        document.title = name.replace(/\.md$/i, '') || 'Resume';
+        // document.title = name.replace(/\.md$/i, '') || 'Resume';
         setStatus('');
       }
 
