@@ -60,8 +60,6 @@
     #resume h3 {
       color: var(--ink);
       line-height: 1.25;
-      page-break-after: avoid;
-      break-after: avoid;
     }
 
     #resume h1 {
@@ -163,10 +161,38 @@
     .download svg { display: block; }
 
     @media (max-width: 680px) {
-      main { padding: 0 0 96px; }
-      #resume { padding: 32px 22px 40px; border-radius: 0; }
+      main { padding: 0 0 calc(88px + env(safe-area-inset-bottom)); }
+      #resume {
+        width: 100%;
+        padding: 28px 18px 36px;
+        border-radius: 0;
+        box-shadow: none;
+      }
       #resume h1 { font-size: 28px; }
-      .download { right: 16px; bottom: 16px; }
+      #resume h2 { letter-spacing: 0.08em; }
+      .download {
+        right: calc(16px + env(safe-area-inset-right));
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        width: 48px;
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+        gap: 0;
+      }
+      .download span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .download svg { width: 20px; height: 20px; }
     }
 
     @media print {
@@ -185,7 +211,7 @@
     </article>
   </main>
 
-  <button id="downloadButton" class="download" type="button" disabled>
+  <button id="downloadButton" class="download" type="button" aria-label="Download resume" disabled>
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none">
       <path d="M8 2.5v7.2M5.2 7.4 8 10.2l2.8-2.8M3.5 13.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -233,12 +259,31 @@
 
         const name = (resume.querySelector('h1')?.textContent || 'Resume').trim();
         const options = {
-          margin: 10,
+          margin: [12, 12, 12, 12],
           filename: `${name} Resume.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            // html2canvas adds the page scroll offset above the captured
+            // element. Forcing both to 0 keeps the resume at the top of page 1.
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            onclone(_doc, element) {
+              const node = element.querySelector('#resume') || element;
+              node.style.boxShadow = 'none';
+              node.style.margin = '0';
+              node.style.width = '100%';
+              node.style.maxWidth = 'none';
+              node.style.padding = '0';
+              node.style.borderRadius = '0';
+            }
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['h1', 'h2', 'h3', 'p', 'li'] }
+          pagebreak: { mode: ['css', 'legacy'], before: [], after: [], avoid: [] }
         };
 
         try {
