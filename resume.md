@@ -20,11 +20,11 @@
 </tr>
 </table>
 
-<div align="center">
+<p style="text-align: center;">
   <strong>
 11 years of expertise in IAM domain ✱ Saviynt, SailPoint ✱ NHI and AI Identity Management
   </strong>
-<div>
+<p>
 
 ---
 
