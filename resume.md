@@ -4,17 +4,17 @@
 <td class="contact"><strong>Address:</strong> Bengaluru, India</td>
 </tr>
 <tr>
-<td>
+<td class="contact">
 <strong>Phone:</strong> +91 8622 028 912
 </td>
 </tr>
 <tr>
-<td>
+<td class="contact">
 <strong>Email:</strong> <a href="mailto:vivek.ku.mohanty@gmail.com">vivek.ku.mohanty@gmail.com</a>
 </td>
 </tr>
 <tr>
-<td>
+<td class="contact">
 <a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a> · <a href="https://vivek9237.github.io">Live Resume</a>
 </td>
 </tr>
