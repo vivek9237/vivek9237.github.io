@@ -22,7 +22,7 @@
 
 <p style="text-align: center;">
   <strong>
-11 years of expertise in IAM domain ✱ Saviynt ✱ SailPoint ✱ NHI and AI Identity Management
+    11 years of expertise in IAM ✱ Saviynt ✱ SailPoint ✱ NHI and AI Identity Management
   </strong>
 <p>
 
