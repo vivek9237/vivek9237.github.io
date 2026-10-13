@@ -1,6 +1,6 @@
 <table class="header">
 <tr>
-<td class="name" rowspan="4" style=" text-align: left;vertical-align: top;"><h1>Vivek Mohanty</h1></td>
+<td class="name" rowspan="0" style=" text-align: left;vertical-align: top;"><h1>Vivek Mohanty</h1></td>
 <td class="contact"><strong>Address:</strong> Bengaluru, India</td>
 </tr>
 <tr>
