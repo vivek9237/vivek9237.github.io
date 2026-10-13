@@ -1,10 +1,22 @@
 <table class="header">
 <tr>
-<td class="name" rowspan="2"><h1>Vivek Mohanty</h1></td>
-<td class="contact"><strong>Address:</strong> Bengaluru, India · <strong>Phone:</strong> +91 8622 028 912</td>
+<td class="name" rowspan="4" style=" text-align: left;vertical-align: top;"><h1>Vivek Mohanty</h1></td>
+<td class="contact"><strong>Address:</strong> Bengaluru, India</td>
 </tr>
 <tr>
-<td class="contact"><strong>Email:</strong> <a href="mailto:vivek.ku.mohanty@gmail.com">vivek.ku.mohanty@gmail.com</a> · <a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a></td>
+<td>
+<strong>Phone:</strong> +91 8622 028 912
+</td>
+</tr>
+<tr>
+<td>
+<strong>Email:</strong> <a href="mailto:vivek.ku.mohanty@gmail.com">vivek.ku.mohanty@gmail.com</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a> · <a href="https://vivek9237.github.io">Live Resume</a>
+</td>
 </tr>
 </table>
 
