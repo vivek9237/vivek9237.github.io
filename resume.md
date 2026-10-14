@@ -30,11 +30,11 @@
 
 ## **Certifications**
 
+- Oasis NHI Fundamental Certification
 - Saviynt Certified IGA Professional
 - Saviynt Certified Advanced IGA Professional
 - SailPoint Identity Security Professional
 - SailPoint Identity Security Leader
-- Oasis NHI Fundamental Certification
 
 ## **Work Experience**
 
