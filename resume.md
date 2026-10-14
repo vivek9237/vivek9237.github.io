@@ -28,7 +28,7 @@
 
 ---
 
-# **Certifications**
+## **Certifications**
 
 - Oasis NHI Fundamental Certification
 - Saviynt Certified IGA Professional
