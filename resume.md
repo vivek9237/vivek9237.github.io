@@ -15,7 +15,7 @@
 </tr>
 <tr>
 <td class="contact">
-<a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a> · <a href="https://vivek9237.github.io">Live Resume</a>
+<a href="https://linkedin.com/in/vivek9237">LinkedIn</a> · <a href="https://github.com/vivek9237">GitHub</a> · <a href="https://vivek9237.github.io/#">Live Resume</a>
 </td>
 </tr>
 </table>
