@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.2.61/jspdf.min.js"></script>
 
   <style>
     :root {
@@ -241,19 +240,580 @@
     </article>
   </main>
 
-  <button id="downloadButton" class="download" type="button" aria-label="Download resume" onclick="saveDiv('resume','Vivek Mohanty - Resume')" disabled>
+  <button id="downloadButton" class="download" type="button" aria-label="Download resume" disabled>
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none">
       <path d="M8 2.5v7.2M5.2 7.4 8 10.2l2.8-2.8M3.5 13.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <span>Download Resume</span>
+    <span>Download resume</span>
   </button>
+
   <script>
-    var doc = new jsPDF();
-    function saveDiv(divId, title) {
-      doc.fromHTML(`<html><head><title>${title}</title></head><body>` + document.getElementById(divId).innerHTML + `</body></html>`);
-      doc.save('Vivek_Mohanty_Resume.pdf');
-    }
+    (() => {
+      'use strict';
+
+      const resume = document.getElementById('resume');
+      const downloadButton = document.getElementById('downloadButton');
+      const label = downloadButton.querySelector('span');
+
+      marked.setOptions({ gfm: true, breaks: false });
+
+      function prepare(source) {
+        return source
+          .replace(/<div\b[^>]*>/gi, '')
+          .replace(/<\/div>/gi, '')
+          .trim();
+      }
+
+      function render(source) {
+        resume.innerHTML = DOMPurify.sanitize(marked.parse(prepare(source)), {
+          USE_PROFILES: { html: true }
+        });
+
+        const heading = resume.querySelector('h1');
+        const name = heading ? heading.textContent.trim() : 'Resume';
+        document.title = name;
+        downloadButton.disabled = false;
+        return name;
+      }
+
+      function pdfText(value) {
+        return value
+          .replace(/\u2731/g, '*')
+          .replace(/[\u2013\u2014]/g, '-')
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201c\u201d]/g, '"')
+          .replace(/\u00a0/g, ' ');
+      }
+
+      function fontStyle(run) {
+        if (run.bold && run.italics) return 'bolditalic';
+        if (run.bold) return 'bold';
+        if (run.italics) return 'italic';
+        return 'normal';
+      }
+
+      function runsFrom(element) {
+        const runs = [];
+        const walk = (node, style) => {
+          node.childNodes.forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              const text = pdfText(child.textContent);
+              if (text) runs.push({ text, ...style });
+              return;
+            }
+            if (child.nodeType !== Node.ELEMENT_NODE) return;
+            const tag = child.tagName;
+            if (tag === 'UL' || tag === 'OL') return;
+            if (tag === 'BR') {
+              runs.push({ text: '\n', ...style });
+              return;
+            }
+            const next = { ...style };
+            if (tag === 'STRONG' || tag === 'B') next.bold = true;
+            if (tag === 'EM' || tag === 'I') next.italics = true;
+            if (tag === 'A') next.link = child.getAttribute('href') || '';
+            walk(child, next);
+          });
+        };
+        walk(element, {});
+        return runs;
+      }
+
+      function buildResumePdf(root) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
+        const margin = 48;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const maxWidth = pageWidth - margin * 2;
+        let y = margin;
+
+        const name = pdfText((root.querySelector('h1')?.textContent || 'Resume').trim());
+        doc.setProperties({
+          title: `${name} Resume`,
+          author: name,
+          subject: 'Resume'
+        });
+        if (typeof doc.setLanguage === 'function') doc.setLanguage('en-US');
+
+        function ensure(height) {
+          if (y + height > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+          }
+        }
+
+        function measure(run, size) {
+          doc.setFont('helvetica', fontStyle(run));
+          doc.setFontSize(size);
+          return doc.getTextWidth(run.text);
+        }
+
+        function tokensOf(runs, size) {
+          const tokens = [];
+          runs.forEach((run) => {
+            if (run.text === '\n') {
+              tokens.push({ break: true });
+              return;
+            }
+            run.text.split(/(\s+)/).forEach((part) => {
+              if (!part) return;
+              tokens.push({ ...run, text: part, width: measure({ ...run, text: part }, size) });
+            });
+          });
+          return tokens;
+        }
+
+        function layout(runs, size, width) {
+          const lines = [];
+          let line = [];
+          let used = 0;
+          tokensOf(runs, size).forEach((token) => {
+            if (token.break) {
+              lines.push(line);
+              line = [];
+              used = 0;
+              return;
+            }
+            if (/^\s+$/.test(token.text)) {
+              if (!line.length) return;
+              line.push(token);
+              used += token.width;
+              return;
+            }
+            if (used + token.width > width && line.length) {
+              while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+              lines.push(line);
+              line = [token];
+              used = token.width;
+            } else {
+              line.push(token);
+              used += token.width;
+            }
+          });
+          while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+          if (line.length) lines.push(line);
+          return lines;
+        }
+
+        function drawLine(line, x, baseline, size) {
+          line.forEach((token) => {
+            doc.setFont('helvetica', fontStyle(token));
+            doc.setFontSize(size);
+            doc.setTextColor(token.color || 22);
+            doc.text(token.text, x, baseline);
+            if (token.link && !/^\s+$/.test(token.text)) {
+              doc.setDrawColor(22);
+              doc.setLineWidth(0.4);
+              doc.line(x, baseline + 1.6, x + token.width, baseline + 1.6);
+              doc.link(x, baseline - size + 1, token.width, size, { url: token.link });
+            }
+            x += token.width;
+          });
+        }
+
+        function drawBlock(runs, options) {
+          const size = options.size || 10;
+          const indent = options.indent || 0;
+          const lineHeight = size * (options.leading || 1.38);
+          const lines = layout(runs, size, maxWidth - indent);
+          lines.forEach((line) => {
+            ensure(lineHeight);
+            const width = line.reduce((sum, token) => sum + token.width, 0);
+            const x = options.align === 'right'
+              ? pageWidth - margin - width
+              : margin + indent;
+            drawLine(line, x, y, size);
+            y += lineHeight;
+          });
+          y += options.after ?? 2;
+        }
+
+        function drawRule() {
+          ensure(10);
+          doc.setDrawColor(17);
+          doc.setLineWidth(0.7);
+          doc.line(margin, y, pageWidth - margin, y);
+          y += 8;
+        }
+
+        function drawHeader(table) {
+          const contacts = [...table.querySelectorAll('td.contact')];
+          const size = 9.5;
+          const lineHeight = 13;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          const nameWidth = doc.getTextWidth(name);
+          const contactWidth = maxWidth - nameWidth - 20;
+          const contactLines = contacts.flatMap((cell) => layout(runsFrom(cell), size, contactWidth));
+          const blockHeight = Math.max(22, contactLines.length * lineHeight);
+          ensure(blockHeight + 4);
+          const top = y;
+          doc.setTextColor(22);
+          doc.text(name, margin, top + Math.max(16, (blockHeight + 8) / 2));
+          contactLines.forEach((line, index) => {
+            const width = line.reduce((sum, token) => sum + token.width, 0);
+            drawLine(line, pageWidth - margin - width, top + 11 + index * lineHeight, size);
+          });
+          y = top + blockHeight + 8;
+        }
+
+        function drawList(list, depth) {
+          [...list.children].forEach((item) => {
+            if (item.tagName !== 'LI') return;
+            const clone = item.cloneNode(true);
+            clone.querySelectorAll('ul, ol').forEach((nested) => nested.remove());
+            const indent = 16 + depth * 14;
+            const size = 10;
+            const lineHeight = size * 1.38;
+            const lines = layout(runsFrom(clone), size, maxWidth - indent);
+            lines.forEach((line, index) => {
+              ensure(lineHeight);
+              if (index === 0) {
+                doc.setFillColor(22);
+                doc.circle(margin + indent - 8, y - 3, 1.15, 'F');
+              }
+              drawLine(line, margin + indent, y, size);
+              y += lineHeight;
+            });
+            y += 1.5;
+            [...item.children].forEach((child) => {
+              if (child.tagName === 'UL' || child.tagName === 'OL') drawList(child, depth + 1);
+            });
+          });
+          y += 3;
+        }
+
+        [...root.children].forEach((element) => {
+          const tag = element.tagName;
+          if (tag === 'TABLE') {
+            drawHeader(element);
+          } else if (tag === 'H2') {
+            ensure(36);
+            y += 8;
+            drawBlock([{ text: pdfText(element.textContent).trim().toUpperCase(), bold: true }], {
+              size: 11,
+              leading: 1.2,
+              after: 3
+            });
+            drawRule();
+          } else if (tag === 'H3') {
+            ensure(28);
+            y += 6;
+            drawBlock(runsFrom(element).map((run) => ({ ...run, bold: true })), {
+              size: 11,
+              leading: 1.25,
+              after: 1
+            });
+          } else if (tag === 'P') {
+            if (!element.textContent.trim()) return;
+            const date = element.querySelector('em') && element.textContent.trim() === element.querySelector('em').textContent.trim();
+            drawBlock(runsFrom(element), {
+              size: date ? 10 : 10.5,
+              leading: 1.38,
+              after: date ? 2 : 3
+            });
+          } else if (tag === 'UL' || tag === 'OL') {
+            drawList(element, 0);
+          } else if (tag === 'HR') {
+            y += 2;
+            drawRule();
+          }
+        });
+
+        return doc;
+      }
+
+      downloadButton.addEventListener('click', () => {
+        const previous = label.textContent;
+        downloadButton.disabled = true;
+        label.textContent = 'Preparing…';
+
+        const name = (resume.querySelector('h1')?.textContent || 'Resume').trim();
+
+        try {
+          const blob = buildResumePdf(resume).output('blob');
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${pdfText(name)} Resume.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        } catch (error) {
+          label.textContent = 'Try again';
+          downloadButton.disabled = false;
+          return;
+        }
+
+        label.textContent = previous;
+        downloadButton.disabled = false;
+      });
+
+      async function loadResume() {
+        try {
+          const response = await fetch('resume.md', { cache: 'no-store' });
+          if (!response.ok) throw new Error('unavailable');
+          render(await response.text());
+        } catch (error) {
+          resume.innerHTML = '<p class="message">The resume could not be loaded.</p>';
+        }
+      }
+
+      loadResume();
+    })();
   </script>
+</body>
+</html><!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Vivek Mohanty — resume" />
+  <title>Resume</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efefef;
+      --paper: #ffffff;
+      --ink: #161616;
+      --muted: #5e5e5e;
+      --line: #dedede;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      padding: 36px 16px 108px;
+    }
+
+    #resume {
+      width: min(820px, 100%);
+      margin: 0 auto;
+      padding: 52px 56px 60px;
+      background: var(--paper);
+      border-radius: 2px;
+      box-shadow: var(--shadow);
+      overflow-wrap: anywhere;
+    }
+
+    #resume > :first-child { margin-top: 0; }
+    #resume > :last-child { margin-bottom: 0; }
+
+    #resume h1,
+    #resume h2,
+    #resume h3 {
+      color: var(--ink);
+      line-height: 1.25;
+    }
+
+    #resume h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      font-weight: 650;
+      letter-spacing: -0.035em;
+    }
+
+    #resume h2 {
+      margin: 30px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #111;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    #resume h3 {
+      margin: 18px 0 2px;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    #resume p { margin: 6px 0; }
+
+    #resume table.header {
+      width: 100%;
+      margin: 0 0 12px;
+      border-collapse: collapse;
+    }
+
+    #resume table.header td {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      vertical-align: middle;
+    }
+
+    #resume table.header td.name {
+      width: 1%;
+      padding-right: 24px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    #resume table.header h1 { margin: 0; text-align: left; }
+
+    #resume table.header td.contact {
+      text-align: right;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #2a2a2a;
+    }
+
+    #resume h3 + p em {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    #resume ul,
+    #resume ol {
+      margin: 6px 0 12px;
+      padding-left: 1.15rem;
+    }
+
+    #resume li { margin: 4px 0; }
+    #resume li::marker { color: #222; }
+
+    #resume a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    #resume hr {
+      margin: 16px 0 0;
+      border: 0;
+      border-top: 1px solid #111;
+    }
+
+    #resume strong { font-weight: 650; }
+
+    #resume code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #f3f3f3;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .message {
+      margin: 0;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .download {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #000;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .download:hover { background: #1a1a1a; }
+    .download:active { transform: translateY(1px); }
+    .download:focus-visible { outline: 3px solid rgba(0, 0, 0, 0.28); outline-offset: 3px; }
+    .download:disabled { cursor: wait; opacity: 0.7; }
+
+    .download svg { display: block; }
+
+    @media (max-width: 680px) {
+      main { padding: 0 0 calc(88px + env(safe-area-inset-bottom)); }
+      #resume {
+        width: 100%;
+        padding: 28px 18px 36px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      #resume h1 { font-size: 28px; }
+      #resume h2 { letter-spacing: 0.08em; }
+      #resume table.header,
+      #resume table.header tbody,
+      #resume table.header tr,
+      #resume table.header td { display: block; width: 100%; }
+      #resume table.header td.contact { margin-top: 4px; text-align: right; }
+      .download {
+        right: calc(16px + env(safe-area-inset-right));
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        width: 48px;
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+        gap: 0;
+      }
+      .download span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .download svg { width: 20px; height: 20px; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      body { background: #fff; }
+      main { padding: 0; }
+      #resume { width: auto; padding: 0; box-shadow: none; }
+      .download { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <article id="resume" aria-live="polite">
+      <p class="message">Loading…</p>
+    </article>
+  </main>
+
+  <button id="downloadButton" class="download" type="button" aria-label="Download resume" disabled>
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none">
+      <path d="M8 2.5v7.2M5.2 7.4 8 10.2l2.8-2.8M3.5 13.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Download resume</span>
+  </button>
+
   <script>
     (() => {
       'use strict';
